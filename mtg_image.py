@@ -1,6 +1,7 @@
 import requests
 import json
 from pathlib import Path
+import os
    
 
 def downloadImg(deck_name, dict):
@@ -45,9 +46,15 @@ class MTGDeck:
     ## Get the name of the deck and add start a file connection
     def __init__(self):
         self.d_name = input("Name of the deck: ")
-        self.d_file = open(self.d_name + ".csv","w") # Needs to be closed
-        self.d_file.write("\"" + self.d_name + "\",,,,,,,\n,,,,,,,\n")
-        self.d_file.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
+        dir = os.getcwd() + "\\" + self.d_name
+        if not(os.path.exists(dir)):
+            os.makedirs(dir + "\\img" )
+            self.d_file = open(dir + "\\" + self.d_name + ".csv","w+")
+            self.d_file.write("\"" + self.d_name + "\",,,,,,,\n,,,,,,,\n")
+            self.d_file.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
+        else:
+            self.d_file = open(dir + "\\" + self.d_name + ".csv","a")
+        
         
     ## Checks conn to server, returns true if conn was good, false if
     ## something was up. Will also output the error
@@ -154,16 +161,16 @@ class MTGDeck:
             
     ## Fix it up nice
     def closeDeck(self):
-        self.d_file.write(",,,,,,,")
         self.d_file.close()
     
 
 def main():
 
+    print(os.getcwd())
     ## Initialize the deck
     deck = MTGDeck()
     
-    
+    ## Prompt for all cards
     deck.promptCards()
     
     ## Close out the deck

@@ -4,22 +4,7 @@ from pathlib import Path
 import os
    
 
-def downloadImg(deck_name, dict):
-    json_obj = dict.json()
-    if ("imageUrl" in json_obj["cards"][0]):
-        img_url = json_obj["cards"][0]["imageUrl"]
-        card_name = json_obj["cards"][0]["name"]
-        print("[+]" + card_name)
-        print("[+]Img found, downloading...")
-        
-        r = requests.get(img_url)
-        if r.status_code == 200:
-            with open(card_name + ".png", "wb") as f:
-                f.write(r.content)
-        else:
-            print("[-]Image download failed")
-    else:
-        print("[-]No image to download")
+
 
 
     
@@ -46,14 +31,14 @@ class MTGDeck:
     ## Get the name of the deck and add start a file connection
     def __init__(self):
         self.d_name = input("Name of the deck: ")
-        dir = os.getcwd() + "\\" + self.d_name
-        if not(os.path.exists(dir)):
-            os.makedirs(dir + "\\img" )
-            self.d_file = open(dir + "\\" + self.d_name + ".csv","w+")
+        self.d_dir = os.getcwd() + "\\" + self.d_name
+        if not(os.path.exists(self.d_dir)):
+            os.makedirs(self.d_dir + "\\img" )
+            self.d_file = open(self.d_dir + "\\" + self.d_name + ".csv","w+")
             self.d_file.write("\"" + self.d_name + "\",,,,,,,\n,,,,,,,\n")
             self.d_file.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
         else:
-            self.d_file = open(dir + "\\" + self.d_name + ".csv","a")
+            self.d_file = open(self.d_dir + "\\" + self.d_name + ".csv","a")
         
         
     ## Checks conn to server, returns true if conn was good, false if
@@ -75,6 +60,22 @@ class MTGDeck:
             print("[-]Status Code: " + str(req.status_code))
 
         return False
+        
+    def downloadImg(self, card_info):
+        
+        if ("imageUrl" in card_info):
+            img_url = card_info["imageUrl"]
+            card_name = card_info["name"]
+            print("[+]Img found, downloading...")
+            
+            r = requests.get(img_url)
+            if r.status_code == 200:
+                with open(self.d_dir + "\\img\\" + card_name + ".png", "wb") as f:
+                    f.write(r.content)
+            else:
+                print("[-]Image download failed")
+        else:
+            print("[-]No image to download")
         
     ## Prints some info on a card
     def printCardInfo(self, card_info):
@@ -122,8 +123,9 @@ class MTGDeck:
             if (num_cards < 1): ## Make sure there's at least one card to work with
                 print("[-]No cards found with that name.")
             else:
-                self.addCard(card_list[self.chooseCard(card_list,num_cards)])
-                #downloadImg(deck_name, req)
+                card_info = card_list[self.chooseCard(card_list,num_cards)]
+                self.addCard(card_info)
+                self.downloadImg(card_info)
                 
                 
     def addCard(self, card_info):

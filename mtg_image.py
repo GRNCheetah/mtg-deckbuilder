@@ -2,21 +2,15 @@ import requests
 import json
 from pathlib import Path
 import os
-   
-
-
-
-
-    
+       
 ## Start Message
 def startMsg():
-    print("\n\n  Welcome to the deck builder")
+    print("\n--------------------------------")
+    print("\n  Welcome to the deck builder")
     print("To use, you will enter the name of your card. It will add it's")
-    print("information to a spreadsheet for you to look at it. Currently,")
-    print("if the name of the file you enter is already there, the deck will")
-    print("be overwritten. Have fun!")
+    print("information to a spreadsheet for you to look at it. The image will")
+    print("also be saved. Have fun!")
 
-        
         
 ## Hopefully this makes it easier
 ## The program will be represented by an object, the deck
@@ -30,7 +24,7 @@ class MTGDeck:
 
     ## Get the name of the deck and add start a file connection
     def __init__(self):
-        self.d_name = input("Name of the deck: ")
+        self.d_name = input("\n\nName of the deck: ")
         self.d_dir = os.getcwd() + "\\" + self.d_name
         if not(os.path.exists(self.d_dir)):
             os.makedirs(self.d_dir + "\\img" )
@@ -80,16 +74,17 @@ class MTGDeck:
     ## Prints some info on a card
     def printCardInfo(self, card_info):
         ## card_info is a dictionary
-        print(card_info["name"])
+        print(card_info["name"] + "\t" + card_info["cmc"] + "\t" + card_info["type"])
+        print(card_info["setName"])
         print(card_info["text"])
         
     def promptCards(self):
         user = ""
-        print("Enter names of cards, leave blank to end")
+        print("\nEnter names of cards, leave blank to end")
         user = input("Card: ")
         while user != "":
             self.addCardToDeck(user)
-            user = input("Next card (Blank to end): ")
+            user = input("\nNext card (Blank to end): ")
         
         
     ## Choose the card
@@ -98,7 +93,8 @@ class MTGDeck:
         
         ## print the cards
         for x in range(num_cards):
-            print("\n" + str(x+1) + ": " + card_list[x]["name"])
+            print("\n" + str(x+1) + ": " + card_list[x]["name"] + "\tMana: " + str(card_list[x]["cmc"]) + "  |  Type: " + card_list[x]["type"])
+            print("Set Name: " + card_list[x]["setName"])
             print(card_list[x]["text"])
             
         ## get a choice
@@ -168,7 +164,9 @@ class MTGDeck:
 
 def main():
 
-    print(os.getcwd())
+    startMsg()
+    
+
     ## Initialize the deck
     deck = MTGDeck()
     

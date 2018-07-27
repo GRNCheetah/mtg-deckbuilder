@@ -1,12 +1,7 @@
 import requests
 import json
 from pathlib import Path
-
-BASE_URL = 'http://api.magicthegathering.io/v1/cards?'
-
-
-#def printCardInfo():
-    
+   
 
 def downloadImg(deck_name, dict):
     json_obj = dict.json()
@@ -25,61 +20,7 @@ def downloadImg(deck_name, dict):
     else:
         print("[-]No image to download")
 
-def addCard(dict, csv_f):
-    json_obj = dict.json()
-    type = json_obj["cards"][0]["type"]
-    name = json_obj["cards"][0]["name"]
-    name = '"' + name + '"'
-    print(name)
-    colors = json_obj["cards"][0]["colorIdentity"]
-    cmc = json_obj["cards"][0]["cmc"]
-    
-    
-    if "creature" in type.lower():
-        power = json_obj["cards"][0]["power"]
-        toughness = json_obj["cards"][0]["toughness"]
-        text = json_obj["cards"][0]["text"]
-        text = '"' + text + '"'
-        csv_f.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + "," + str(power) + "," + str(toughness) + "," + text + ",,\n")
-    elif "planeswalker" in type.lower():
-        csv_f.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,,,,\n")
-    else:
-        text = json_obj["cards"][0]["text"]
-        text = '"' + text + '"'
-        csv_f.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,," + text + ",,\n")
-    
-    
-    
-   
-'''
-Will get the card information and add it to the spreadsheet
-Overwrites the current spreadsheet atm
-Also saves a copy of the picture of the card
 
-'''
-## Gets passed a str: deck name, str: card name, and a file: csv_f
-def getInfo(deck_name, card_name, csv_f):
-    # get the cards dictionary
-    req = requests.get(BASE_URL + "name=" + card_name)
-    
-    # if the connection was good
-    if (req.status_code == 200) and (int(req.headers["Count"]) >= 1):
-        addCard(req, csv_f)
-        downloadImg(deck_name, req)
-    elif int(req.headers["Count"]) < 1:
-        print("[-]No cards found with that name.")
-    elif req.status_code == 403:
-        print("[-]Exceeded the rate limit, wait a minute or so")
-        print("[-]May have to wait up to an hour")
-    elif req.status_code == 500:
-        print("[-]Server problem, try again in a minute")
-        print("[-]Status Code: " + str(req.status_code))
-    elif req.status_code == 503:
-        print("[-]Server is down for maintenance")
-        print("[-]Status Code: " + str(req.status_code))
-    else:
-        print("[-]Connection failed")
-        print("[-]Status Code: " + str(req.status_code))
     
 ## Start Message
 def startMsg():
@@ -89,25 +30,6 @@ def startMsg():
     print("if the name of the file you enter is already there, the deck will")
     print("be overwritten. Have fun!")
 
-    
-## Main Loop
-def mainLoop():
-    startMsg()
-    print("\nEnter each card one at a time")    
-    print("Type donezo when you are donezo")
-    
-    deck_name = input(">>What is the name of this deck? ")
-    
-    with open(deck_name + ".csv","w") as csv_f:
-        csv_f.write("\"" + deck_name + "\",,,,,,,\n,,,,,,,\n")
-        csv_f.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
-        card_name = input(">>Card name:")
-            
-        while card_name != "donezo":
-            getInfo(deck_name, card_name, csv_f)
-            card_name = input(">>Next card: ")
-            
-        csv_f.write(",,,,,,,")
         
         
 ## Hopefully this makes it easier
@@ -117,12 +39,138 @@ def mainLoop():
 ## remove from the deck.
         
 class MTGDeck:
+    ## Url of the api
+    BASE_URL = 'http://api.magicthegathering.io/v1/cards?'
 
-
-
+    ## Get the name of the deck and add start a file connection
+    def __init__(self):
+        self.d_name = input("Name of the deck: ")
+        self.d_file = open(self.d_name + ".csv","w") # Needs to be closed
+        self.d_file.write("\"" + self.d_name + "\",,,,,,,\n,,,,,,,\n")
+        self.d_file.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
         
-mainLoop()
+    ## Checks conn to server, returns true if conn was good, false if
+    ## something was up. Will also output the error
+    def checkConn(self, req):
+        if (req.status_code == 200):
+            return True
+        elif req.status_code == 403:
+            print("[-]Exceeded the rate limit, wait a minute or so")
+            print("[-]May have to wait up to an hour")
+        elif req.status_code == 500:
+            print("[-]Server problem, try again in a minute")
+            print("[-]Status Code: " + str(req.status_code))
+        elif req.status_code == 503:
+            print("[-]Server is down for maintenance")
+            print("[-]Status Code: " + str(req.status_code))
+        else:
+            print("[-]Connection failed")
+            print("[-]Status Code: " + str(req.status_code))
+
+        return False
+        
+    ## Prints some info on a card
+    def printCardInfo(self, card_info):
+        ## card_info is a dictionary
+        print(card_info["name"])
+        print(card_info["text"])
+        
+    def promptCards(self):
+        user = ""
+        print("Enter names of cards, leave blank to end")
+        user = input("Card: ")
+        while user != "":
+            self.addCardToDeck(user)
+            user = input("Next card (Blank to end): ")
+        
+        
+    ## Choose the card
+    def chooseCard(self, card_list, num_cards):
+        user_choice = 0
+        
+        ## print the cards
+        for x in range(num_cards):
+            print("\n" + str(x+1) + ": " + card_list[x]["name"])
+            print(card_list[x]["text"])
+            
+        ## get a choice
+        user_choice = input("Choose a card: ")
+
+        while not(int(user_choice) > 0 and int(user_choice) <= num_cards):
+            user_choice = input("Error, try again: ")
+            
+        return int(user_choice) - 1
+ 
+    ## The full func to add a card to the deck. All it needs it the name
+    ## Add the card to the spreadsheet. Copy image of card to folder
+    def addCardToDeck(self, card_name):
+        ## Do request
+        req = requests.get(self.BASE_URL + "name=" + card_name)
+        ## Card list
+        card_list = req.json()["cards"]
+        num_cards = len(card_list)
+        
+        ## Make sure connection was fine
+        if self.checkConn(req):
+            if (num_cards < 1): ## Make sure there's at least one card to work with
+                print("[-]No cards found with that name.")
+            else:
+                self.addCard(card_list[self.chooseCard(card_list,num_cards)])
+                #downloadImg(deck_name, req)
+                
+                
+    def addCard(self, card_info):
+        
+        ## Put all of the card info into vars
+        name = card_info["name"]
+        type = card_info["type"]
+        colors = card_info["colorIdentity"]
+        cmc = card_info["cmc"]
+        
+        ## Escape commas in the names
+        name = '"' + name + '"'
+        type = '"' + type + '"'
+        
+        
+        ## Different cards have different bits of information
+        if "creature" in type.lower():
+            power = card_info["power"]
+            toughness = card_info["toughness"]
+            text = card_info["text"]
+            
+            text = '"' + text + '"'
+            
+            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + "," + str(power) + "," + str(toughness) + "," + text + ",,\n")
+        
+        elif "planeswalker" in type.lower():
+            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,,,,\n")
+        
+        else:
+            text = card_info["text"]
+            text = '"' + text + '"'
+            
+            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,," + text + ",,\n")
+         
+            
+    ## Fix it up nice
+    def closeDeck(self):
+        self.d_file.write(",,,,,,,")
+        self.d_file.close()
+    
+
+def main():
+
+    ## Initialize the deck
+    deck = MTGDeck()
+    
+    
+    deck.promptCards()
+    
+    ## Close out the deck
+    deck.closeDeck()
+        
+
+if __name__ == '__main__':
+    main()
 
 
-##     our_card_from_the_site_._json["cards"][use_this_to_choose_different_cards_returned]["identifier"]
-#print(json_obj["cards"][0]["imageUrl"])

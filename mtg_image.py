@@ -30,7 +30,7 @@ class MTGDeck:
             os.makedirs(self.d_dir + "\\img" )
             self.d_file = open(self.d_dir + "\\" + self.d_name + ".csv","w+")
             self.d_file.write("\"" + self.d_name + "\",,,,,,,\n,,,,,,,\n")
-            self.d_file.write("Name,Colors,Mana Cost,Type,P,T,Text,,\n")
+            self.d_file.write("Set Name,Name,Colors,Mana Cost,Type,P,T,Text,,\n")
         else:
             self.d_file = open(self.d_dir + "\\" + self.d_name + ".csv","a")
         
@@ -98,10 +98,10 @@ class MTGDeck:
             print(card_list[x]["text"])
             
         ## get a choice
-        user_choice = input("Choose a card: ")
+        user_choice = input("\nChoose a card: ")
 
         while not(int(user_choice) > 0 and int(user_choice) <= num_cards):
-            user_choice = input("Error, try again: ")
+            user_choice = input("\nError, try again: ")
             
         return int(user_choice) - 1
  
@@ -129,12 +129,14 @@ class MTGDeck:
         ## Put all of the card info into vars
         name = card_info["name"]
         type = card_info["type"]
-        colors = card_info["colorIdentity"]
+        setName = card_info["setName"]
+        
         cmc = card_info["cmc"]
         
         ## Escape commas in the names
         name = '"' + name + '"'
         type = '"' + type + '"'
+        setName = '"' + setName + '"'
         
         
         ## Different cards have different bits of information
@@ -142,19 +144,25 @@ class MTGDeck:
             power = card_info["power"]
             toughness = card_info["toughness"]
             text = card_info["text"]
+            colors = card_info["colorIdentity"]
             
             text = '"' + text + '"'
             
-            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + "," + str(power) + "," + str(toughness) + "," + text + ",,\n")
+            self.d_file.write(setName + "," + name + "," + " ".join(colors) + "," + str(cmc) + "," + type + "," + str(power) + "," + str(toughness) + "," + text + ",,\n")
         
         elif "planeswalker" in type.lower():
-            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,,,,\n")
-        
-        else:
+            colors = card_info["colorIdentity"]
+            self.d_file.write(setName + "," + name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,,,,\n")
+        elif "artifact" in type.lower():
             text = card_info["text"]
             text = '"' + text + '"'
+            self.d_file.write(setName + "," + name + ",," + str(cmc) + "," + type + ",,," + text+ ",,\n")
+        else:
+            text = card_info["text"]
+            colors = card_info["colorIdentity"]
+            text = '"' + text + '"'
             
-            self.d_file.write(name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,," + text + ",,\n")
+            self.d_file.write(setName + "," + name + "," + " ".join(colors) + "," + str(cmc) + "," + type + ",,," + text + ",,\n")
          
             
     ## Fix it up nice
